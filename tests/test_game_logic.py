@@ -48,19 +48,28 @@ def test_last_attempt_is_not_off_by_one():
     assert attempts_left(limit, limit - 1) == 1
 
 
-# --- check_guess --------------------------------------------------------------
+# --- check_guess from Claude --------------------------------------------------------------
 
-def test_winning_guess():
-    # If the secret is 50 and guess is 50, it should be a win
-    result = check_guess(50, 50)
-    assert result == "Win"
+def test_guess_too_high_tells_player_to_go_lower():
+    """Regression: a guess above the secret must hint LOWER, not HIGHER.
 
-def test_guess_too_high():
-    # If secret is 50 and guess is 60, hint should be "Too High"
-    result = check_guess(60, 50)
-    assert result == "Too High"
+    This is the bug that was fixed: guessing 50 when the secret was 20
+    used to say "Go HIGHER!" — the complete opposite of the truth.
+    """
+    outcome, message = check_guess(50, 20)
+    assert outcome == "Too High"
+    assert "LOWER" in message
+    assert "HIGHER" not in message
 
-def test_guess_too_low():
-    # If secret is 50 and guess is 40, hint should be "Too Low"
-    result = check_guess(40, 50)
-    assert result == "Too Low"
+
+def test_guess_too_low_tells_player_to_go_higher():
+    """Regression: a guess below the secret must hint HIGHER, not LOWER."""
+    outcome, message = check_guess(10, 20)
+    assert outcome == "Too Low"
+    assert "HIGHER" in message
+    assert "LOWER" not in message
+
+
+def test_correct_guess_wins():
+    outcome, _ = check_guess(20, 20)
+    assert outcome == "Win"
